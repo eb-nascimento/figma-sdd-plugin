@@ -120,6 +120,28 @@ docs/
   - nome sugerido do asset;
   - dúvidas ou limitações.
 
+### Ícones de redes sociais
+
+- Tratar ícones de redes sociais como elementos de marca, não como ícones genéricos.
+- Quando o Figma apresentar ícones de redes sociais em SVG, vetor, componente ou asset, preservar como SVG.
+- Salvar ícones sociais em `assets/svg/`, preferencialmente com nomes semânticos.
+- Não substituir ícones sociais por texto, emoji, fonte aproximada ou ícone visualmente parecido sem confirmação.
+- Não inventar ícones de redes sociais que não estejam no Figma ou no escopo solicitado.
+- Não trocar o estilo do ícone, por exemplo, de preenchido para outline, colorido para monocromático, ou arredondado para quadrado, sem autorização.
+- Reutilizar o mesmo SVG quando o mesmo ícone aparecer em header, footer, cards ou outras seções.
+- Se o projeto já usa biblioteca de ícones, como Lucide, Font Awesome ou similar, usar somente se o estilo bater com o Figma e se isso for padrão do projeto.
+- Se houver divergência entre o ícone da biblioteca e o ícone do Figma, priorizar o SVG do Figma.
+- Atualizar imports e referências após mover os ícones para `assets/svg/`.
+
+Exemplos de nomes:
+
+````text
+assets/svg/icon-instagram.svg
+assets/svg/icon-linkedin.svg
+assets/svg/icon-facebook.svg
+assets/svg/icon-youtube.svg
+assets/svg/icon-whatsapp.svg
+
 ### Componentes interativos
 
 - Identificar componentes interativos antes de implementar.
@@ -135,7 +157,7 @@ Pergunta recomendada quando o comportamento não estiver claro:
 
 ```text
 Esse bloco deve funcionar como carrossel/slider? Se sim, deve ter setas, dots, autoplay, loop, swipe no mobile ou apenas rolagem horizontal?
-```
+````
 
 ### Assets
 
@@ -342,6 +364,9 @@ A skill foi seguida corretamente quando:
 - Validações técnicas disponíveis foram executadas ou a impossibilidade foi reportada.
 - SDD, README ou documentação aplicável foi atualizada.
 - Divergências, limitações e suposições foram registradas.
+- Ícones de redes sociais foram preservados como SVG/assets quando estavam presentes no Figma.
+- Ícones sociais não foram substituídos por texto, emoji, fonte aproximada ou biblioteca divergente do design.
+- Ícones sociais foram salvos em `assets/svg/` com nomes semânticos.
 
 ## Sinais de alerta
 
@@ -372,6 +397,10 @@ Interrompa, sinalize risco ou peça confirmação quando encontrar:
 - Texto cortado, elemento oculto, botão desalinhado ou container com tamanho incorreto.
 - Build, lint, teste ou validação aplicável não executado sem justificativa.
 - SDD ou documentação aplicável desatualizada após mudança técnica.
+- Ícones de redes sociais foram recriados manualmente sem usar o SVG do Figma.
+- Ícones sociais foram trocados por biblioteca externa com estilo diferente.
+- Ícones sociais ficaram em PNG/JPG sem necessidade quando havia vetor/SVG disponível.
+- Ícones sociais foram salvos fora de `assets/svg/`.
 
 ## Resultado esperado
 

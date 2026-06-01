@@ -1,1141 +1,393 @@
----
+﻿---
 name: figma-mcp
-description: Use esta skill para auditar arquivos Figma e orientar agentes de IA/Codex/VS Code/Cursor na geração de código com MCP, priorizando fidelidade visual, reutilização de componentes, tokens, acessibilidade, controle de assets, confirmação de linguagem/stack, organização de arquitetura, limpeza de assets e atualização do SDD.
+description: Use esta skill para auditar arquivos Figma e orientar agentes de IA/Codex/VS Code/Cursor na geração de código com MCP, priorizando fidelidade visual, reutilização de componentes, tokens, acessibilidade, preservação de funcionalidades, controle de assets, confirmação de stack, estrutura escalável, QA visual bloqueante e atualização do SDD.
 ---
 
 # Skill: Figma MCP
 
 ## Objetivo
 
-Ajudar o agente a usar o Figma MCP de forma controlada, verificável e aderente ao projeto, evitando geração de código baseada apenas em aparência visual e garantindo que o Figma seja tratado como fonte de contexto estruturado: componentes, variantes, tokens, auto layout, estilos, espaçamentos, assets e fluxos.
+Usar o Figma MCP como fonte estruturada para implementar, revisar ou auditar interfaces com fidelidade visual, segurança de arquitetura e controle de assets.
 
-A skill também orienta o agente a não assumir automaticamente a linguagem, framework ou stack de implementação, exigindo confirmação prévia do usuário antes de gerar ou alterar código.
+A skill deve orientar o agente a:
 
-Além disso, define regras para organização da estrutura do projeto, controle, limpeza, exclusão e renomeação de assets gerados pelo Figma MCP, evitando que arquivos soltos, fundos, seções inteiras ou imagens desnecessárias sejam mantidos no projeto.
+- interpretar frames, componentes, variantes, tokens, auto layout, estilos, espaçamentos, assets e fluxos;
+- confirmar a stack antes de gerar ou alterar código;
+- preservar funcionalidades existentes durante ajustes futuros;
+- organizar o projeto em estrutura escalável;
+- preservar logos e marcas como assets;
+- tratar componentes interativos como comportamento real, não como imagem estática;
+- baixar, renomear, separar e limpar assets com critério;
+- executar QA visual real e validação técnica;
+- atualizar SDD, README ou documentação aplicável quando houver decisão técnica, alteração estrutural, mudança de assets ou comportamento implementado.
+
+Não usar esta skill para redesenhar por preferência própria. O Figma é a referência visual e estrutural, salvo decisão explícita do usuário.
 
 ## Quando usar
 
 Use esta skill quando a tarefa envolver:
 
-- Implementar telas a partir de um link do Figma usando MCP.
-- Auditar se um arquivo Figma está pronto para uso por agentes de IA.
-- Converter layout Figma em código frontend.
-- Comparar implementação existente com o design.
-- Gerar ou atualizar componentes com base em design system.
-- Avaliar consistência entre Figma, código e SDD.
-- Criar prompts para Codex, Cursor, VS Code ou outro agente conectado ao Figma MCP.
-- Definir quais assets devem ou não ser baixados a partir do Figma.
-- Revisar, excluir ou renomear assets gerados automaticamente pelo Figma MCP.
-- Organizar a implementação em uma estrutura escalável de páginas, componentes, estilos, assets, serviços e utilitários.
+- implementar telas, seções ou componentes a partir de um link do Figma;
+- auditar se um arquivo Figma está pronto para implementação com IA;
+- converter layout Figma em frontend;
+- comparar implementação existente com o design;
+- ajustar código já gerado a partir do Figma;
+- revisar fidelidade visual, responsividade, estados, assets e componentes;
+- identificar e implementar componentes interativos, como carrosséis, sliders, galerias, abas, modais e menus;
+- definir quais assets devem ser baixados, renomeados, movidos ou excluídos;
+- preservar logos, marcas e identidade visual em toda a página;
+- organizar estrutura de pastas de páginas, componentes, estilos, assets, serviços e utilitários;
+- atualizar SDD, README ou documentação de handoff técnico.
 
-## Pré-requisitos
+## Regras obrigatórias
 
-Antes de implementar qualquer tela, confirme:
+### Stack e escopo
 
-- O MCP do Figma está configurado no cliente/agente utilizado.
-- O link informado aponta para um frame, seção ou componente específico, não apenas para o arquivo geral.
-- O usuário tem permissão adequada no Figma.
-- O usuário informou a linguagem, framework ou stack desejada para a implementação.
-- O repositório possui padrões de componentes, rotas, estilos, tokens e estrutura de pastas.
-- O SDD ou documentação técnica do projeto está disponível ou deve ser atualizado durante a tarefa.
+- Confirmar linguagem, framework ou stack antes de gerar ou alterar código.
+- Não assumir React, Next.js, Vue, Angular, Flutter, HTML/CSS, Tailwind ou outra tecnologia apenas pelo Figma ou pelo repositório.
+- Se o usuário já informou a stack na mesma solicitação ou no contexto direto da tarefa, seguir sem perguntar novamente.
+- Trabalhar com o menor escopo possível: frame, seção, componente ou seleção específica.
+- Não interpretar o arquivo Figma inteiro quando o pedido aponta para um frame ou nó específico.
+- Validar que o link informado aponta para frame, seção ou componente rastreável.
 
-## Regra obrigatória — validação visual real, não apenas screenshot
-
-Após implementar ou revisar uma tela, o agente não deve apenas gerar screenshots. Ele deve analisar os screenshots e o DOM/renderização para identificar problemas visuais objetivos.
-
-São considerados erros bloqueantes:
-
-- imagens sobrepostas indevidamente;
-- textos cortados ou ilegíveis;
-- botões desalinhados;
-- elementos fora da tela;
-- cards empilhados incorretamente;
-- imagens duplicadas no mesmo espaço visual;
-- ícones fora de posição;
-- conteúdo oculto por z-index incorreto;
-- containers com altura/largura incorreta;
-- quebras visuais em responsividade;
-- diferenças evidentes em relação ao Figma.
-
-Se o agente gerar screenshots, ele deve revisar visualmente cada tela e declarar explicitamente:
-
-- se há ou não sobreposição de elementos;
-- se imagens, botões, textos e cards estão visíveis corretamente;
-- se a tela está coerente com o Figma;
-- se há divergências críticas, importantes ou cosméticas.
-
-Não considerar a validação concluída apenas porque a página carregou ou porque o screenshot foi gerado.
-
-## Regra obrigatória — identificação de componentes interativos
-
-Ao analisar um frame do Figma, o agente deve identificar elementos que representam componentes interativos, mesmo quando o comportamento não estiver totalmente explícito no design.
-
-O agente deve verificar especialmente:
-
-- carrosséis;
-- sliders;
-- abas;
-- accordions;
-- menus dropdown;
-- modais;
-- cards clicáveis;
-- paginações;
-- galerias de imagens;
-- steps/etapas;
-- formulários com múltiplas telas;
-- banners rotativos.
-
-O agente não deve transformar componentes interativos em blocos estáticos sem validar o comportamento esperado.
-
-Quando identificar um possível carrossel, slider ou galeria, o agente deve confirmar ou inferir com cautela:
-
-- quais itens fazem parte do carrossel;
-- se os itens aparecem um por vez ou em grupo;
-- se há navegação por setas;
-- se há indicadores/pontos de paginação;
-- se há autoplay;
-- se há loop infinito;
-- se há swipe em dispositivos móveis;
-- se há comportamento responsivo;
-- se há acessibilidade por teclado;
-- se o carrossel deve ser implementado com componente próprio, biblioteca ou código nativo.
-
-Se o comportamento não estiver claro no Figma, o agente deve perguntar antes de implementar.
-
-## Regra obrigatória — carrosséis, sliders e galerias
-
-Quando o Figma apresentar múltiplos cards, imagens, banners ou depoimentos organizados em sequência horizontal, o agente deve avaliar se isso representa um carrossel, slider ou galeria navegável.
-
-O agente não deve empilhar todos os itens verticalmente nem sobrepor imagens caso o layout indique navegação horizontal.
-
-Antes de implementar um carrossel, o agente deve mapear:
-
-- lista de itens/slides;
-- conteúdo de cada slide;
-- imagem, título, texto e botão de cada item;
-- largura dos cards;
-- espaçamento entre itens;
-- quantidade de itens visíveis por breakpoint;
-- controles de navegação;
-- indicadores;
-- comportamento mobile;
-- comportamento de acessibilidade.
-
-Se houver setas, dots, overflow horizontal, cards parcialmente visíveis ou múltiplos frames representando estados diferentes, tratar como forte indício de carrossel.
-
-Se o Figma não definir o comportamento, perguntar ao usuário:
-
-"Esse bloco deve funcionar como carrossel/slider? Se sim, deve ter setas, dots, autoplay, swipe no mobile ou apenas rolagem horizontal?"
-
-A implementação deve preservar o comportamento esperado e não apenas a aparência estática.
-
-## Regra obrigatória — detecção de sobreposição de elementos
-
-Durante a revisão visual, o agente deve verificar se há elementos ocupando o mesmo espaço de forma indevida.
-
-A validação deve considerar especialmente:
-
-- imagens;
-- logos;
-- ilustrações;
-- cards;
-- botões;
-- inputs;
-- textos;
-- menus;
-- modais;
-- elementos com `position: absolute`;
-- elementos com `z-index`;
-- elementos renderizados a partir de assets baixados do Figma MCP.
-
-Quando houver três ou mais imagens, ícones ou elementos visuais próximos, o agente deve verificar se eles estão empilhados intencionalmente ou se houve erro de layout.
-
-Se houver dúvida, tratar como possível erro visual e reportar antes de finalizar.
-
-Sobreposição só deve ser aceita quando estiver claramente prevista no Figma, como em avatares agrupados, badges, overlays, sombras, fundos decorativos ou composições visuais intencionais.
-
-## Regra obrigatória — confirmação da linguagem/stack
-
-Antes de gerar, alterar ou sugerir código, o agente deve sempre perguntar em qual linguagem, framework ou stack o usuário deseja implementar.
-
-O agente não deve assumir automaticamente React, Next.js, Vue, Angular, Flutter, HTML/CSS, Tailwind ou qualquer outra tecnologia apenas com base no Figma, no MCP, na aparência da tela ou em padrões visuais do layout.
-
-A pergunta deve ser feita antes da implementação, mesmo que o projeto pareça indicar uma stack provável.
-
-Exemplo de pergunta obrigatória:
+Pergunta obrigatória quando a stack não estiver definida:
 
 ```text
 Antes de implementar, em qual linguagem, framework ou stack você deseja escrever essa tela? Ex.: React, Next.js, Vue, Angular, Flutter, HTML/CSS, Tailwind ou outra.
 ```
 
-Somente após a resposta do usuário o agente pode planejar ou gerar código.
+### Preservação de funcionalidades existentes
 
-Se o usuário já tiver informado a linguagem, framework ou stack na mesma solicitação, o agente pode seguir sem perguntar novamente.
+- Preservar funcionalidades existentes em ajustes futuros.
+- Não remover rotas, componentes, estados, validações, assets, estilos, integrações ou interações sem autorização explícita.
+- Não substituir uma implementação funcional por uma versão mais simples que perca comportamento.
+- Não alterar fluxos não relacionados ao pedido atual.
+- Antes de alterar código existente, identificar comportamento atual, arquivos impactados, partes que devem ser preservadas e risco de regressão.
+- Aplicar mudanças incrementais e controladas.
+- Comparar comportamento anterior e posterior quando aplicável.
+- Registrar no SDD remoções autorizadas, preservações relevantes e mudanças de comportamento.
+- Não editar linha por linha; aplicar alterações em bloco único/consolidado, preservando o comportamento existente e evitando reescritas desnecessárias.
 
-## Regra obrigatória — organização da estrutura do projeto
+### Estrutura do projeto
 
-Antes de criar arquivos, o agente deve verificar a estrutura atual do repositório e respeitar o padrão existente.
+- Verificar a estrutura atual do repositório antes de criar arquivos.
+- Não criar `index.html`, `style.css`, `script.js`, `main.js`, `app.js`, `styles.css` ou equivalentes soltos na raiz, salvo protótipo simples explicitamente solicitado.
+- Organizar o projeto em estrutura escalável quando houver potencial de crescimento.
+- Separar páginas, componentes, estilos, assets, serviços e utilitários.
+- Seguir convenções da stack escolhida e padrões já existentes no repositório.
+- Evitar concentrar toda a implementação em um único arquivo quando a tecnologia permite separação.
+- Não criar arquitetura paralela sem justificar e documentar.
 
-O agente não deve criar arquivos soltos diretamente na raiz do projeto, como:
-
-- `index.html`
-- `style.css`
-- `script.js`
-- `main.js`
-- `app.js`
-- `styles.css`
-
-Essa abordagem só é permitida quando o usuário solicitar explicitamente um protótipo estático simples, de página única, sem intenção de evolução.
-
-Quando o projeto puder ter mais de uma página, tela, rota ou módulo, o agente deve organizar a implementação em uma estrutura escalável, separando páginas, componentes, estilos, assets, serviços e utilitários.
-
-Antes de implementar, o agente deve identificar ou propor uma estrutura de pastas adequada para a stack escolhida.
-
-Exemplo genérico de estrutura recomendada:
+Estrutura de referência, adaptável à stack:
 
 ```text
 src/
   pages/
-    Home/
-      index.*
-      styles.*
-    Login/
-      index.*
-      styles.*
   components/
-    Button/
-      index.*
-      styles.*
-    Header/
-      index.*
-      styles.*
-  assets/
-    images/
-    icons/
   styles/
-    globals.*
-    tokens.*
   services/
   utils/
-```
-
-Para projetos HTML/CSS/JS simples, evitar arquivos soltos na raiz e preferir uma organização como:
-
-```text
-public/
-  index.html
-
-src/
-  pages/
-    home.html
-    login.html
-  scripts/
-    main.js
-    navigation.js
-  styles/
-    globals.css
-    pages/
-      home.css
-      login.css
-  assets/
-    images/
-    icons/
-```
-
-Para React, Next.js, Vue, Angular, Flutter ou outra stack, o agente deve seguir a convenção própria da tecnologia escolhida e a estrutura já existente no repositório.
-
-Se a estrutura do projeto ainda não existir, o agente deve propor a organização antes de criar arquivos.
-
-Se o projeto já possuir uma arquitetura definida, o agente deve adaptar a implementação a ela, sem criar padrões paralelos.
-
-O agente deve evitar concentrar toda a implementação em um único arquivo quando houver potencial de crescimento do projeto.
-
-## Regra obrigatória — fidelidade visual e não invenção de layout
-
-O agente deve preservar a maior fidelidade possível ao Figma, especialmente em elementos visuais, textos, botões, logos, espaçamentos, cores, bordas, ícones e hierarquia visual.
-
-O agente não deve inventar melhorias, alterar estilos, trocar formatos, mudar textos, ajustar botões, substituir ícones ou reinterpretar elementos visuais sem autorização explícita do usuário.
-
-É permitido adaptar tecnicamente o design para a linguagem/stack escolhida, mas sem alterar a intenção visual do layout.
-
-Antes de modificar qualquer elemento em relação ao Figma, o agente deve sinalizar a divergência e pedir confirmação.
-
-Não alterar automaticamente:
-
-- textos de botões;
-- tamanho, cor, borda ou raio de botões;
-- ícones;
-- logos;
-- espaçamentos;
-- alinhamentos;
-- hierarquia visual;
-- ordem dos elementos;
-- estados visuais;
-- cores de fundo;
-- imagens e ilustrações.
-
-Quando houver limitação técnica para reproduzir exatamente o Figma, o agente deve registrar a limitação e propor a alternativa mais fiel possível.
-
-## Regra obrigatória — inventário de logos e marcas na página inteira
-
-O agente deve identificar e validar todas as ocorrências de logos, marcas, assinaturas institucionais e elementos de identidade visual presentes no frame ou página do Figma.
-
-A validação não deve se limitar ao header.
-
-O agente deve verificar logos e marcas em:
-
-- header;
-- footer;
-- sidebar;
-- menu;
-- hero/banner;
-- cards;
-- modais;
-- telas de login;
-- telas de erro;
-- estados vazios;
-- componentes institucionais;
-- qualquer outra seção da página.
-
-Logos e marcas devem ser preservados como assets, preferencialmente SVG, quando existirem no Figma.
-
-O agente não deve recriar logos como texto HTML/CSS, mesmo quando a logo parecer apenas uma palavra digitada.
-
-Antes de implementar, o agente deve montar um inventário de marcas contendo:
-
-- local onde a logo aparece;
-- nome visual ou institucional identificado;
-- formato esperado, como SVG, imagem ou componente;
-- forma correta de implementação;
-- nome sugerido do asset;
-- observação sobre eventuais dúvidas.
-
-Exemplo de inventário:
-
-```text
-Local: Header
-Elemento: Logo SESI
-Implementação correta: SVG/asset
-Nome sugerido: logo-sesi.svg
-
-Local: Footer
-Elemento: Logo SESI
-Implementação correta: SVG/asset
-Nome sugerido: logo-sesi.svg
-Observação: reutilizar o mesmo asset se for a mesma marca.
-```
-
-Se a mesma logo aparecer em mais de uma área da página, o agente deve reutilizar o mesmo asset sempre que possível, evitando duplicidade.
-
-Se houver dúvida se um elemento é texto comum ou marca institucional, tratar como logo/marca e pedir confirmação antes de converter para texto.
-
-Ao revisar a implementação, o agente deve confirmar explicitamente que todas as logos da página foram preservadas como asset ou componente visual, incluindo as logos do footer.
-
-## Regra obrigatória — preservação de logos e marcas
-
-Logos, marcas, assinaturas visuais e elementos institucionais devem ser preservados como assets, preferencialmente em SVG, quando existirem no Figma.
-
-Essa regra vale para a página inteira, não apenas para o header.
-
-O agente não deve converter uma logo em texto HTML/CSS, mesmo que visualmente pareça apenas texto, salvo se o usuário solicitar explicitamente.
-
-Quando o Figma apresentar uma logo como vetor, SVG, imagem ou componente de marca, o agente deve tratá-la como asset institucional.
-
-Regras:
-
-- Usar SVG para logos sempre que disponível.
-- Não recriar logo com texto digitado.
-- Não substituir logo por fonte aproximada.
-- Não alterar proporção, cor, espaçamento ou composição da marca.
-- Não rasterizar SVG desnecessariamente.
-- Não baixar versões duplicadas da mesma logo.
-- Reutilizar o mesmo asset quando a mesma logo aparecer em header, footer ou outras seções.
-- Nomear o asset de forma semântica, por exemplo: `logo-sesi.svg`, `logo-iel.svg`, `logo-fiergs.svg`.
-
-Se houver dúvida se um elemento é logo ou texto comum, tratar como logo e pedir confirmação antes de converter para texto.
-
-## Checklist de qualidade do Figma para MCP
-
-Avalie o arquivo Figma antes de gerar código.
-
-### 1. Estrutura do arquivo
-
-O arquivo deve ter páginas e frames nomeados de forma clara, como:
-
-- `Cover`
-- `Design System`
-- `Components`
-- `Flows`
-- `Desktop`
-- `Mobile`
-- `Homologação`
-- `Dev Ready`
-
-Evite nomes genéricos como `Frame 123`, `Group 8`, `Copy 2` ou `Untitled`.
-
-### 2. Seleção correta do escopo
-
-Sempre trabalhe com o menor escopo possível:
-
-- Para uma tela, usar o link do frame da tela.
-- Para um componente, usar o link do componente ou component set.
-- Para um fluxo, usar uma seção com frames relacionados.
-- Para ajustes pontuais, usar o link da seleção específica.
-
-Não peça ao agente para interpretar o arquivo inteiro sem necessidade.
-
-### 3. Auto layout
-
-Verifique se os principais blocos usam auto layout:
-
-- Containers principais.
-- Cards.
-- Headers.
-- Menus laterais.
-- Botões.
-- Inputs.
-- Modais.
-- Listas e tabelas.
-
-Caso o design esteja baseado em grupos soltos e posições absolutas, sinalize risco de baixa responsividade e maior retrabalho na implementação.
-
-### 4. Componentes e variantes
-
-Confirme se elementos recorrentes estão componentizados:
-
-- Botões.
-- Campos de formulário.
-- Cards.
-- Badges/status.
-- Menus.
-- Abas.
-- Modais.
-- Tabelas.
-- Componentes de feedback, como alertas, empty states e loading.
-
-Verifique se há variantes para estados como:
-
-- Default.
-- Hover.
-- Focus.
-- Disabled.
-- Loading.
-- Error.
-- Success.
-- Selected.
-
-### 5. Tokens, estilos e variáveis
-
-Priorize designs que usam:
-
-- Variáveis de cor.
-- Estilos de texto.
-- Tokens de espaçamento.
-- Tokens de borda.
-- Tokens de raio.
-- Tokens de sombra.
-- Temas, quando aplicável.
-
-Evite copiar valores brutos sem verificar se há token correspondente no projeto.
-
-### 6. Responsividade
-
-Verifique se há orientação para:
-
-- Desktop.
-- Tablet, se aplicável.
-- Mobile.
-- Breakpoints.
-- Comportamento de menus, tabelas e cards em telas menores.
-
-Quando o projeto for visual-first ou pixel-preview, tamanhos fixos podem ser aceitos temporariamente para acelerar a estilização, mas devem ser sinalizados como etapa intermediária, não como solução final responsiva.
-
-### 7. Acessibilidade
-
-Antes de implementar, validar:
-
-- Hierarquia de títulos.
-- Contraste de cores.
-- Estados de foco.
-- Labels de campos.
-- Áreas clicáveis adequadas.
-- Navegação por teclado.
-- Textos alternativos para imagens relevantes.
-- Feedbacks de erro compreensíveis.
-
-### 8. Assets e ícones
-
-Verifique se:
-
-- Ícones fazem parte de uma biblioteca consistente.
-- Imagens têm nome claro.
-- Logos e imagens institucionais têm versão correta.
-- Assets exportáveis estão marcados corretamente.
-- SVGs não foram convertidos desnecessariamente em imagens rasterizadas.
-
-## Regra para uso de assets via Figma MCP
-
-Ao usar o Figma MCP, baixar assets somente quando forem imagens reais, logos, ilustrações, ícones SVG, fotografias ou elementos visuais que não possam ser reproduzidos com CSS, tokens, variáveis ou componentes do projeto.
-
-Não baixar como imagem:
-
-- fundos de tela com cor sólida;
-- gradientes simples;
-- cards;
-- sombras;
-- bordas;
-- containers;
-- botões;
-- inputs;
-- shapes decorativos simples;
-- seções inteiras da tela;
-- blocos que podem ser reproduzidos com CSS, Tailwind, tokens ou variáveis.
-
-Sempre que possível, reproduzir fundos, espaçamentos, cores, bordas, sombras e estados usando CSS, Tailwind, tokens ou variáveis do projeto.
-
-Antes de baixar assets, o agente deve listar quais arquivos serão gerados e justificar por que cada um precisa ser asset.
-
-Se houver dúvida se um elemento deve ser exportado como imagem ou reproduzido em código, priorizar reprodução em código e registrar a decisão.
-
-## Regra obrigatória — separação da pasta assets por tipo
-
-O agente deve organizar os assets do projeto separando imagens rasterizadas e arquivos SVG em pastas distintas.
-
-A pasta de assets deve seguir, sempre que aplicável, uma estrutura como:
-
-```text
 assets/
   img/
   svg/
+docs/
 ```
 
-ou, conforme a stack do projeto:
+### Fidelidade visual
+
+- Preservar fidelidade visual ao Figma em textos, botões, logos, cores, espaçamentos, alinhamentos, bordas, sombras, ícones, imagens e hierarquia visual.
+- Não inventar melhorias visuais, textos, botões, cores, ícones, espaçamentos, ordem dos elementos ou hierarquia visual.
+- Não reinterpretar elementos visuais sem autorização explícita.
+- Adaptar tecnicamente à stack escolhida sem alterar a intenção visual do layout.
+- Quando não for possível reproduzir exatamente o Figma, registrar a limitação e propor a alternativa mais fiel.
+- Classificar divergências como críticas, importantes ou cosméticas durante revisão.
+- Corrigir apenas divergências objetivas em relação ao Figma, salvo pedido explícito de redesign.
+
+### Logos e marcas
+
+- Preservar logos, marcas, assinaturas visuais e elementos institucionais como assets ou componentes visuais, preferencialmente SVG.
+- Aplicar essa regra à página inteira: header, footer, sidebar, menus, hero, cards, modais, estados vazios, telas de erro e demais seções.
+- Não converter logos institucionais em texto HTML/CSS.
+- Não substituir logo por fonte aproximada.
+- Não alterar proporção, cor, espaçamento ou composição da marca.
+- Reutilizar o mesmo asset quando a mesma marca aparece em mais de uma seção.
+- Tratar como marca qualquer elemento visual institucional com dúvida razoável.
+- Fazer inventário de logos antes de implementar ou revisar:
+  - local da ocorrência;
+  - nome visual/institucional;
+  - formato esperado;
+  - forma correta de implementação;
+  - nome sugerido do asset;
+  - dúvidas ou limitações.
+
+### Componentes interativos
+
+- Identificar componentes interativos antes de implementar.
+- Tratar carrosséis, sliders e galerias como componentes interativos, não como blocos estáticos.
+- Verificar também abas, accordions, menus dropdown, modais, cards clicáveis, paginações, steps, formulários multi-etapa e banners rotativos.
+- Quando houver setas, dots, overflow horizontal, cards parcialmente visíveis ou sequência de imagens/cards, tratar como indício de carrossel/slider/galeria.
+- Mapear itens, quantidade visível, controles, estados, responsividade, teclado e mobile antes de codificar.
+- Perguntar o comportamento esperado quando carrossel, slider ou galeria não estiver claro no Figma.
+- Não empilhar, duplicar ou sobrepor itens que deveriam navegar horizontalmente.
+- Não adicionar autoplay, loop ou biblioteca externa sem confirmação ou padrão existente no projeto.
+
+Pergunta recomendada quando o comportamento não estiver claro:
 
 ```text
-src/
-  assets/
-    img/
-    svg/
+Esse bloco deve funcionar como carrossel/slider? Se sim, deve ter setas, dots, autoplay, loop, swipe no mobile ou apenas rolagem horizontal?
 ```
 
-ou:
+### Assets
 
-```text
-public/
-  assets/
-    img/
-    svg/
-```
-
-Regras obrigatórias:
-
-- Arquivos `.svg` devem ser salvos em `assets/svg/`.
-- Logos, ícones, marcas e ilustrações vetoriais em SVG devem ficar em `assets/svg/`.
-- Arquivos `.png`, `.jpg`, `.jpeg`, `.webp`, `.gif`, `.avif` e similares devem ficar em `assets/img/`.
-- Não misturar SVGs e imagens rasterizadas na mesma pasta.
-- Não salvar assets diretamente em `assets/` sem subpasta.
-- Não criar nomes genéricos como `image-1`, `vector-2`, `asset-3`.
-- Atualizar todos os imports e referências após mover arquivos.
-- Se o projeto já tiver uma estrutura própria, adaptar a organização mantendo a separação entre `img` e `svg`.
-
-Exemplos:
-
-```text
-src/assets/img/hero-login-background.png
-src/assets/img/card-dashboard-illustration.webp
-src/assets/svg/logo-sesi.svg
-src/assets/svg/icon-arrow-right.svg
-src/assets/svg/logo-fiergs.svg
-```
-
-Se houver dúvida sobre o tipo do asset, o agente deve verificar a extensão e o conteúdo antes de mover ou renomear.
-
-## Regra para limpeza e renomeação de assets
-
-Após usar o Figma MCP, o agente deve revisar os assets gerados e organizar os arquivos para evitar acúmulo de imagens desnecessárias no projeto.
-
-O agente deve:
-
-- Identificar assets utilizados no código.
-- Identificar assets aparentemente não utilizados.
-- Identificar assets com uso incerto.
-- Excluir somente assets que não tenham nenhuma referência no projeto.
-- Renomear assets utilizados com nomes semânticos, curtos e padronizados.
-- Atualizar todas as referências aos assets renomeados.
-- Manter o SDD atualizado com as alterações realizadas.
-- Separar assets por tipo, mantendo SVGs em `assets/svg/` e imagens rasterizadas em `assets/img/`.
-
-Antes de excluir ou renomear arquivos, o agente deve gerar um relatório com:
-
-- assets utilizados;
-- assets aparentemente não utilizados;
-- assets com uso incerto;
-- sugestão de novo nome para cada asset utilizado;
-- justificativa para exclusão ou manutenção de cada arquivo analisado.
-
-Regras obrigatórias:
-
-- Não excluir arquivos com uso incerto.
-- Não excluir logos, ícones institucionais, imagens públicas ou assets compartilhados sem confirmar uso.
-- Não renomear assets externos, arquivos de biblioteca ou arquivos fora das pastas do projeto.
-- Não editar linha por linha; aplicar alterações em bloco único/consolidado.
-- Atualizar imports, caminhos, referências em CSS, componentes, páginas, JSON e documentação.
-- Ao final, executar validações disponíveis no projeto, como lint, build ou testes.
-
-Exceção importante: logos, marcas, assinaturas institucionais e ícones oficiais devem ser preservados como assets, preferencialmente SVG, mesmo quando pareçam reproduzíveis com texto ou CSS.
-
-Padrão de nome sugerido:
-
-- Usar letras minúsculas.
-- Usar kebab-case.
+- Baixar assets apenas quando necessário: fotos, ilustrações, logos, ícones SVG, imagens institucionais ou visuais que não possam ser reproduzidos com código.
+- Não baixar fundos, containers, cards, botões, inputs, sombras, bordas, gradientes simples, shapes simples ou seções inteiras como imagem quando puderem ser reproduzidos em código.
+- Antes de baixar, listar os assets necessários e justificar cada um.
+- Separar assets por tipo:
+  - SVGs em `assets/svg/`;
+  - PNG, JPG, JPEG, WEBP, GIF, AVIF e similares em `assets/img/`.
+- Não deixar assets soltos diretamente em `assets/`.
+- Renomear assets com nomes semânticos, curtos e em kebab-case.
 - Evitar nomes genéricos como `image-1`, `rectangle`, `frame`, `asset`, `vector`, `group`.
-- Usar nomes baseados na função visual do asset.
+- Excluir somente assets claramente não utilizados.
+- Não excluir assets com uso incerto.
+- Não excluir logos, ícones institucionais, imagens públicas ou assets compartilhados sem confirmar uso.
+- Atualizar imports, caminhos, CSS, JSON, componentes, páginas e documentação após mover ou renomear assets.
+- Registrar no SDD assets baixados, renomeados, movidos, preservados ou excluídos.
 
-Exemplos:
+### QA visual bloqueante
 
-- `image-12.png` → `hero-login-background.png`
-- `vector-3.svg` → `icon-arrow-right.svg`
-- `rectangle-45.png` → `dashboard-card-illustration.png`
-- `logo-final-1.svg` → `logo-sesi.svg`
+- Fazer QA visual real, não apenas gerar screenshot.
+- Analisar screenshots e DOM/renderização.
+- Validar desktop e mobile quando aplicável.
+- Tratar como bloqueantes:
+  - imagens sobrepostas indevidamente;
+  - textos cortados, ilegíveis, ocultos ou fora do container;
+  - botões desalinhados, cortados ou com texto incorreto;
+  - elementos fora da tela;
+  - cards empilhados incorretamente;
+  - imagens duplicadas no mesmo espaço visual;
+  - ícones fora de posição;
+  - conteúdo oculto por z-index incorreto;
+  - overflow indevido;
+  - containers com altura/largura incorreta;
+  - quebra visual evidente em responsividade;
+  - logos recriadas como texto;
+  - diferença evidente em relação ao Figma.
+- Validar especialmente elementos com `position: absolute`, `z-index`, `overflow`, overlays e assets exportados pelo MCP.
+- Não finalizar a tarefa se houver erro visual evidente.
+- Declarar explicitamente se há ou não sobreposição, texto cortado, elementos ocultos e divergências críticas.
 
-Pastas comuns a analisar:
+### Documentação
 
-- `public/`
-- `src/assets/`
-- `assets/`
-- `app/assets/`
-- `components/`
-- `pages/`
-- `styles/`
-- qualquer pasta equivalente usada pelo projeto.
+- Atualizar SDD, README ou documentação aplicável quando houver:
+  - decisão técnica;
+  - alteração de estrutura;
+  - alteração de assets;
+  - comportamento implementado;
+  - componente interativo definido;
+  - divergência conhecida em relação ao Figma;
+  - remoção ou preservação relevante de funcionalidade.
+- Documentar limitações do Figma, suposições, assets não exportáveis e divergências aceitas.
+- Não tratar a tarefa como concluída se a documentação obrigatória ficou desatualizada.
 
-Se a estrutura do projeto não estiver clara, primeiro identifique onde os assets estão armazenados e onde são referenciados antes de alterar qualquer arquivo.
+## Fluxo obrigatório com Figma MCP
 
-### 9. Dev Mode e handoff
+### 1. Entendimento do frame/seleção Figma
 
-Procure evidências de preparo para desenvolvimento:
+- Abrir o link via MCP.
+- Confirmar que o escopo é específico e rastreável.
+- Identificar frames, seções, componentes, textos, estilos, tokens, imagens, estados e fluxos.
+- Preferir o menor nó possível para evitar contexto excessivo.
 
-- Frames finais marcados como prontos para desenvolvimento.
-- Comentários resolvidos ou tratados.
-- Regras de comportamento documentadas.
-- Estados de tela disponíveis.
-- Fluxos de navegação claros.
-- Textos reais ou exemplos próximos do conteúdo final.
+### 2. Confirmação da stack
 
-### 10. Code Connect e design system
+- Confirmar linguagem, framework e estratégia de estilo antes de gerar ou alterar código.
+- Se a stack já estiver definida no pedido/contexto, registrar a stack usada e seguir.
 
-Quando houver design system e repositório com componentes reais:
+### 3. Auditoria do Figma
 
-- Priorize reutilizar componentes existentes.
-- Mapear componentes Figma para componentes do código.
-- Evitar recriar componentes que já existem.
-- Usar Code Connect quando disponível.
-- Registrar divergências entre design e implementação.
+- Avaliar nomes de frames/camadas, auto layout, componentes, variantes, tokens, responsividade, acessibilidade e handoff.
+- Classificar como pronto, parcialmente pronto ou risco alto.
+- Sinalizar lacunas que impactam implementação.
 
-## Fluxo recomendado de trabalho com MCP
+### 4. Identificação de componentes interativos
 
-### Etapa 1 — Entendimento
+- Mapear carrosséis, sliders, galerias, abas, modais, menus, steps, filtros e formulários.
+- Perguntar comportamento esperado quando o Figma não definir interação.
+- Registrar estados e responsividade esperados.
 
-Antes de codificar, o agente deve:
+### 5. Planejamento da estrutura do projeto
 
-1. Ler o link do frame/seleção via MCP.
-2. Perguntar em qual linguagem, framework ou stack o usuário deseja implementar, caso isso ainda não tenha sido informado.
-3. Identificar layout, componentes, tokens, textos, estados e assets.
-4. Verificar se existe componente equivalente no repositório.
-5. Identificar dependências técnicas e padrões existentes.
-6. Confirmar se a tela está pronta para implementação ou se há lacunas.
+- Ler a estrutura atual do repositório.
+- Reutilizar padrões, componentes, helpers e tokens existentes.
+- Definir arquivos afetados, novos componentes, páginas, estilos e utilitários.
+- Planejar mudanças incrementais preservando funcionalidades atuais.
 
-### Etapa 2 — Auditoria rápida do Figma
+### 6. Inventário de assets e logos
 
-Classifique o design como:
+- Listar logos e marcas na página inteira.
+- Listar fotos, ilustrações, ícones e demais assets realmente necessários.
+- Definir nome semântico e pasta de destino para cada asset.
+- Indicar assets que serão reproduzidos em código.
 
-- **Pronto para MCP**: componentes, auto layout, tokens, nomes claros e estados definidos.
-- **Parcialmente pronto**: estrutura visual clara, mas com lacunas em responsividade, tokens ou estados.
-- **Risco alto**: grupos soltos, nomes genéricos, sem componentes, sem estados e sem regras de comportamento.
+### 7. Implementação incremental
 
-Quando houver risco, informe antes de implementar.
+- Implementar respeitando a stack, arquitetura e fidelidade visual.
+- Reutilizar componentes existentes antes de criar novos.
+- Não remover funcionalidades fora do escopo.
+- Evitar alterações globais sem justificar impacto.
+- Registrar decisões no SDD conforme necessário.
 
-### Etapa 3 — Planejamento da implementação
+### 8. Limpeza/organização de assets
 
-Antes de alterar código:
-
-- Confirme a linguagem, framework ou stack desejada.
-- Verifique se o projeto terá uma ou mais páginas, telas, rotas ou módulos.
-- Analise a estrutura atual do repositório.
-- Não crie arquivos soltos na raiz do projeto, salvo solicitação explícita para protótipo simples.
-- Defina a estrutura de pastas adequada antes de implementar.
-- Identifique arquivos afetados.
-- Defina páginas, rotas ou módulos necessários.
-- Defina componentes a reutilizar.
-- Defina novos componentes necessários.
-- Defina estilos/tokens a aplicar.
-- Defina rotas, props, estados e integrações.
-- Liste assets que realmente precisam ser baixados.
-- Atualize o SDD com decisões relevantes.
-- Defina a estrutura de assets separando `img/` e `svg/`.
-
-### Etapa 4 — Implementação
-
-Regras obrigatórias:
-
-- Não editar linha por linha; aplicar alterações em bloco único/consolidado.
-- Manter o SDD atualizado com alterações, adições e ajustes realizados.
-- Usar componentes existentes antes de criar novos.
-- Evitar hardcode quando houver tokens ou constantes do projeto.
-- Separar layout, comportamento e dados quando a arquitetura do projeto permitir.
-- Não implementar regras de negócio inexistentes no Figma sem sinalizar suposição.
-- Não alterar padrões globais sem justificar impacto.
-- Não baixar fundos, containers, cards ou seções inteiras como imagem quando puderem ser reproduzidos por código.
-- Não trocar a linguagem/stack definida pelo usuário sem solicitar nova confirmação.
-- Não criar arquivos soltos na raiz do projeto quando houver potencial de evolução para múltiplas páginas, telas, rotas ou módulos.
-- Não concentrar toda a implementação em um único arquivo quando a stack permitir separação em páginas, componentes, estilos, serviços e utilitários.
-
-### Etapa 5 — Limpeza de assets
-
-Após implementar uma tela ou componente com Figma MCP, o agente deve:
-
-- Revisar os assets baixados.
-- Verificar quais assets estão referenciados no projeto.
-- Listar assets não utilizados, utilizados e incertos.
+- Separar SVGs em `assets/svg/` e imagens raster em `assets/img/`.
+- Renomear assets usados em kebab-case.
+- Atualizar imports e referências.
 - Excluir apenas arquivos claramente não utilizados.
-- Renomear assets utilizados com nomes semânticos.
-- Atualizar todos os imports e caminhos.
-- Registrar as alterações no SDD.
-- Mover SVGs para `assets/svg/` e imagens rasterizadas para `assets/img/`.
+- Preservar assets com uso incerto.
 
-A limpeza não deve ser feita às cegas. O agente deve preservar qualquer arquivo cujo uso não esteja completamente claro.
+### 9. QA visual bloqueante
 
-### Etapa 6 — QA visual bloqueante e validação técnica
+- Gerar screenshots quando aplicável.
+- Revisar visualmente os screenshots e a renderização.
+- Verificar sobreposição, cortes, overflow, z-index, responsividade, botões, textos, cards, logos e assets.
+- Comparar com o Figma e classificar divergências.
+- Corrigir bloqueantes antes de finalizar.
 
-Após implementar e revisar assets:
+### 10. Validação técnica e atualização do SDD
 
-- Comparar a tela com o frame Figma.
-- Gerar screenshots quando aplicável e analisar visualmente cada tela.
-- Validar se há imagens, cards, textos, botões, logos ou seções sobrepostos indevidamente.
-- Verificar se há textos cortados, elementos ocultos, problemas de z-index, position absolute, overflow ou responsividade.
-- Validar espaçamentos, tipografia, cores, estados e responsividade.
-- Verificar se assets baixados são realmente necessários.
-- Verificar se todas as logos da página foram preservadas como assets/SVG quando aplicável.
-- Verificar se a estrutura de pastas está adequada para evolução do projeto.
-- Verificar console, lint, build e testes disponíveis.
-- Registrar divergências conhecidas.
+- Rodar validações disponíveis: build, lint, testes, typecheck ou checagem equivalente.
+- Verificar console quando houver frontend renderizado.
 - Atualizar SDD, README ou documentação aplicável.
+- Reportar arquivos alterados, assets movidos/renomeados/excluídos, validações executadas e pendências.
 
-A tarefa não deve ser considerada concluída se houver sobreposição indevida, elementos ocultos, textos cortados, logos recriadas como texto ou erro visual evidente.
+## Prompts recomendados essenciais
 
-## Prompts recomendados
-
-### Auditar Figma antes de implementar
+### 1. Auditar Figma antes de implementar
 
 ```text
 Use o Figma MCP para analisar este frame: <URL_DO_FRAME>.
-Avalie se ele está pronto para implementação com IA, considerando: nomes de camadas, auto layout, componentes, variantes, tokens, responsividade, acessibilidade, assets e clareza do fluxo.
-Retorne uma classificação: Pronto para MCP, Parcialmente pronto ou Risco alto.
-Liste apenas os pontos que impactam diretamente a implementação.
+Avalie se está pronto para implementação considerando escopo, nomes, auto layout, componentes, variantes, tokens, responsividade, acessibilidade, logos, assets e componentes interativos.
+Classifique como pronto, parcialmente pronto ou risco alto.
+Liste apenas lacunas que impactam implementação.
 Não altere código ainda.
 ```
 
-### Validar logos e marcas na página inteira
-
-```text
-Revise todas as logos, marcas e assinaturas institucionais presentes no frame Figma: <URL_DO_FRAME>.
-
-Não limite a análise ao header.
-
-Verifique obrigatoriamente:
-- header;
-- footer;
-- sidebar;
-- menus;
-- hero/banner;
-- cards;
-- modais;
-- estados vazios;
-- telas de erro;
-- qualquer outra seção da página.
-
-Para cada logo encontrada, informe:
-1. Onde ela aparece no Figma.
-2. Como ela foi implementada no código.
-3. Se está como SVG/asset/componente visual ou se foi recriada incorretamente como texto.
-4. Qual asset deve ser usado.
-5. Se há duplicidade desnecessária de arquivos.
-
-Corrija logos recriadas como texto, inclusive no footer.
-
-Preserve logos como SVG/assets sempre que possível.
-Não substitua marca institucional por texto HTML/CSS.
-Não altere proporção, cor, espaçamento ou composição da marca.
-Atualize todas as referências no código.
-Não editar linha por linha; aplicar alterações em bloco único/consolidado.
-Manter o SDD atualizado com as correções realizadas.
-```
-
-### Identificar e implementar carrossel corretamente
-
-```text
-Use o Figma MCP para analisar este frame: <URL_DO_FRAME>.
-
-Antes de implementar, identifique se há carrosséis, sliders, galerias, abas ou outros componentes interativos.
-
-Para cada possível carrossel, informe:
-1. Quais elementos fazem parte do carrossel.
-2. Quantos itens existem.
-3. Quantos itens devem aparecer por vez.
-4. Se há setas, dots, autoplay, loop ou swipe mobile.
-5. Como deve funcionar no desktop e no mobile.
-6. Se o comportamento está explícito no Figma ou precisa de confirmação.
-
-Não implemente o carrossel como imagens soltas, elementos sobrepostos ou blocos estáticos.
-
-Se o comportamento não estiver claro, pergunte antes de codificar.
-
-Após confirmar, implemente respeitando a stack definida, a estrutura do projeto, os componentes existentes e a fidelidade visual do Figma.
-
-Não editar linha por linha; aplicar alterações em bloco único/consolidado.
-Atualize o SDD com o comportamento do carrossel.
-```
-
-### Organizar estrutura antes de implementar
-
-```text
-Antes de implementar o frame do Figma MCP, analise a estrutura atual do repositório.
-
-Não crie index.html, style.css, script.js ou arquivos equivalentes diretamente na raiz do projeto, salvo se eu pedir explicitamente um protótipo estático simples de página única.
-
-Se o projeto puder ter mais páginas, telas, rotas ou módulos, organize a implementação em estrutura escalável, separando páginas, componentes, estilos, assets, serviços e utilitários.
-
-Primeiro proponha a estrutura de pastas adequada para a linguagem/stack escolhida.
-Depois implemente respeitando essa estrutura.
-
-Não editar linha por linha; aplicar alterações em bloco único/consolidado.
-Manter o SDD atualizado com as alterações, adições e ajustes realizados.
-```
-
-### Implementar tela com controle de qualidade
+### 2. Implementar tela com controle de qualidade
 
 ```text
 Use o Figma MCP para implementar este frame: <URL_DO_FRAME>.
-
-Antes de implementar, pergunte em qual linguagem, framework ou stack devo escrever o código, caso isso ainda não tenha sido informado.
-
-Não assuma React, Next.js, Vue, Angular, Flutter, HTML/CSS, Tailwind ou qualquer outra tecnologia automaticamente.
-
-Antes de codificar:
-1. Analise a estrutura atual do repositório.
-2. Verifique se o projeto terá uma ou mais páginas, telas, rotas ou módulos.
-3. Não crie index.html, style.css, script.js ou arquivos equivalentes diretamente na raiz do projeto, salvo solicitação explícita para protótipo simples.
-4. Proponha ou siga uma estrutura escalável, separando páginas, componentes, estilos, assets, serviços e utilitários.
-5. Identifique componentes existentes no repositório que devem ser reutilizados.
-6. Liste os assets realmente necessários antes de baixá-los.
-
-Implemente respeitando a arquitetura atual, tokens, padrões de estilo e estrutura de pastas.
-
-Não editar linha por linha; aplicar alterações em bloco único/consolidado.
-
-Atualize o SDD com as alterações, adições e decisões realizadas.
-
-Ao final, reporte:
-- arquivos criados;
-- arquivos alterados;
-- estrutura de pastas utilizada;
-- assets baixados, renomeados ou excluídos;
-- principais decisões;
-- divergências em relação ao Figma.
+Antes de alterar código, confirme a stack se ela ainda não estiver definida.
+Preserve funcionalidades existentes, siga a estrutura do projeto, identifique componentes interativos, inventarie logos/assets e baixe apenas o necessário.
+Organize assets em assets/svg/ e assets/img/, com nomes semânticos em kebab-case.
+Implemente de forma incremental, mantendo fidelidade visual ao Figma.
+Execute QA visual real, validações técnicas disponíveis e atualize o SDD.
 ```
 
-### Controlar download de assets
-
-```text
-Use o Figma MCP para analisar este frame: <URL_DO_FRAME>.
-Antes de baixar qualquer asset, liste quais imagens, ícones, logos ou ilustrações realmente precisam ser exportados.
-Não exporte fundos, containers, cards, gradientes simples, sombras, bordas, inputs, botões, shapes decorativos simples ou seções inteiras da tela.
-Sempre que possível, reproduza esses elementos com CSS, Tailwind, tokens ou variáveis do projeto.
-Após listar e justificar os assets necessários, implemente usando apenas esses arquivos.
-Não editar linha por linha; aplicar alterações em bloco único/consolidado.
-Atualize o SDD com as decisões realizadas.
-Organize os assets baixados separando arquivos SVG em assets/svg/ e imagens rasterizadas em assets/img/.
-Não misture SVG, PNG, JPG, WEBP ou outros formatos na mesma pasta.
-```
-
-### Limpar e renomear assets após uso do Figma MCP
-
-```text
-Revise os assets gerados pelo Figma MCP neste projeto.
-
-Objetivo:
-1. Identificar assets não utilizados.
-2. Excluir somente assets que não tenham nenhuma referência no código, estilos, configurações, rotas, componentes, HTML, CSS, TS/JS, JSX/TSX, JSON, Markdown ou arquivos de build relevantes.
-3. Renomear os assets utilizados para nomes semânticos, curtos e padronizados.
-4. Atualizar todas as referências aos assets renomeados.
-5. Manter o SDD atualizado com as alterações realizadas.
-
-Regras obrigatórias:
-- Não excluir arquivos com uso incerto.
-- Não excluir logos, ícones institucionais, imagens públicas ou assets compartilhados sem confirmar uso.
-- Não renomear assets externos, arquivos de biblioteca ou arquivos fora das pastas do projeto.
-- Não editar linha por linha; aplicar alterações em bloco único/consolidado.
-- Antes de excluir ou renomear, gerar um relatório com:
-  - assets utilizados;
-  - assets aparentemente não utilizados;
-  - assets com uso incerto;
-  - sugestão de novo nome para cada asset utilizado.
-- Após o relatório, aplicar as alterações somente nos assets claramente seguros.
-- Atualizar imports, caminhos, referências em CSS, componentes, páginas, JSON e documentação.
-- Ao final, executar validações disponíveis no projeto, como lint, build ou testes.
-- Informar arquivos excluídos, arquivos renomeados e referências atualizadas.
-
-Padrão de nome sugerido:
-- Usar letras minúsculas.
-- Usar kebab-case.
-- Evitar nomes genéricos como image-1, rectangle, frame, asset, vector, group.
-- Usar nomes baseados na função visual do asset.
-
-Exemplos:
-- image-12.png → hero-login-background.png
-- vector-3.svg → icon-arrow-right.svg
-- rectangle-45.png → dashboard-card-illustration.png
-- logo-final-1.svg → logo-sesi.svg
-
-Pastas a analisar:
-- public/
-- src/assets/
-- assets/
-- app/assets/
-- components/
-- pages/
-- styles/
-- ou qualquer pasta equivalente usada pelo projeto.
-
-Além de limpar e renomear, reorganize os assets por tipo:
-- SVGs em assets/svg/
-- PNG, JPG, JPEG, WEBP, GIF, AVIF e similares em assets/img/
-
-Atualize todos os imports e referências após mover os arquivos.
-
-Se a estrutura do projeto não estiver clara, primeiro identifique onde os assets estão armazenados e onde são referenciados antes de alterar qualquer arquivo.
-```
-
-### Comparar implementação com Figma
-
-```text
-Compare a implementação atual com este frame Figma: <URL_DO_FRAME>.
-
-Verifique:
-- fidelidade visual;
-- espaçamentos;
-- tipografia;
-- cores;
-- estados;
-- responsividade;
-- uso de componentes;
-- uso adequado de assets;
-- organização da estrutura de pastas.
-
-Classifique divergências em:
-- Impeditivas;
-- Importantes;
-- Cosméticas.
-
-Não faça alterações sem listar primeiro o plano consolidado.
-```
-
-### Revisar fidelidade visual após implementação
+### 3. Revisar fidelidade visual e QA bloqueante
 
 ```text
 Compare a implementação atual com o frame Figma: <URL_DO_FRAME>.
-
-Faça uma revisão rigorosa de fidelidade visual.
-
-Faça uma busca no código por nomes de marcas, como SESI, SENAI, IEL, FIERGS ou outras identificadas no Figma, e confirme se essas ocorrências são conteúdo textual real ou se deveriam ser logos/assets.
-
-Verifique especialmente:
-- logos e marcas;
-- textos;
-- botões;
-- ícones;
-- cores;
-- tipografia;
-- espaçamentos;
-- alinhamentos;
-- bordas;
-- sombras;
-- imagens;
-- hierarquia visual;
-- estados visuais;
-- sobreposição de elementos;
-- z-index;
-- position absolute;
-- overflow;
-- responsividade.
-
-Não invente melhorias e não altere o layout com base em preferência própria.
-
-Aponte diferenças entre Figma e código classificando em:
-- Críticas: comprometem identidade visual, marca, entendimento da tela ou causam erro visual evidente.
-- Importantes: alteram aparência, usabilidade ou consistência.
-- Cosméticas: pequenas diferenças visuais aceitáveis para ajuste fino.
-
-Para cada divergência, informe:
-1. Como está no Figma.
-2. Como ficou no código.
-3. Correção recomendada.
-4. Arquivos afetados.
-
-Corrija apenas divergências objetivas em relação ao Figma.
-Preserve logos como SVG/assets, não como texto.
-Não finalize se houver imagens sobrepostas, elementos ocultos, textos cortados ou erro visual evidente.
-Não editar linha por linha; aplicar alterações em bloco único/consolidado.
-Atualize o SDD com as correções realizadas.
+Analise screenshots e DOM/renderização; não considere screenshot gerado como validação suficiente.
+Verifique logos, textos, botões, ícones, cores, espaçamentos, alinhamentos, imagens, cards, interações, z-index, overflow, position absolute e responsividade.
+Classifique problemas em críticos, importantes e cosméticos.
+Corrija apenas divergências objetivas em relação ao Figma e não finalize se houver erro visual evidente.
+Atualize o SDD com correções, limitações e pendências.
 ```
 
-### Usar componentes do projeto
+### 4. Limpar, separar e renomear assets
 
 ```text
-Use o Figma MCP para obter o contexto deste componente: <URL_DO_COMPONENTE>.
-Antes de gerar código, confirme a linguagem, framework ou stack desejada, caso ainda não tenha sido informada.
-Procure no repositório o componente equivalente.
-Se existir, reutilize e ajuste apenas props, composição ou estilos locais.
-Se não existir, proponha um novo componente seguindo os padrões do projeto.
-Atualize o SDD e evite duplicação de componentes.
+Revise os assets do projeto.
+Identifique usados, não usados e incertos.
+Mova SVGs para assets/svg/ e imagens raster para assets/img/.
+Renomeie assets usados com nomes semânticos em kebab-case e atualize imports/referências.
+Exclua somente assets claramente não utilizados; preserve logos, marcas e arquivos com uso incerto.
+Execute validações disponíveis e atualize o SDD com arquivos movidos, renomeados ou excluídos.
 ```
 
-### Revisar tela com validação visual rigorosa
+### 5. Ajustar sem remover funcionalidades existentes
 
 ```text
-Revise a implementação atual comparando com o Figma: <URL_DO_FRAME>.
-
-Não basta gerar screenshots. Analise visualmente os screenshots e a estrutura renderizada.
-
-Verifique obrigatoriamente:
-1. Se há imagens sobrepostas indevidamente.
-2. Se há textos cortados, ocultos ou fora do container.
-3. Se botões mantêm posição, tamanho, cor, borda, raio e texto conforme o Figma.
-4. Se logos foram preservados como assets/SVG e não recriados como texto.
-5. Se ícones, imagens e ilustrações estão na posição correta.
-6. Se cards, seções e containers não estão empilhados incorretamente.
-7. Se há elementos duplicados ocupando o mesmo espaço.
-8. Se há problemas de z-index, position absolute, overflow ou responsividade.
-9. Se a tela continua fiel ao Figma em desktop e, quando aplicável, mobile.
-
-Classifique cada problema encontrado em:
-- Crítico: erro visual evidente ou elemento sobreposto/cortado.
-- Importante: diferença perceptível em relação ao Figma.
-- Cosmético: ajuste fino de espaçamento, alinhamento ou proporção.
-
-Antes de concluir, informe explicitamente:
-- telas revisadas;
-- screenshots gerados;
-- problemas encontrados;
-- correções aplicadas;
-- problemas ainda pendentes.
-
-Não finalize a tarefa se houver imagens sobrepostas, elementos ocultos ou erro visual evidente.
-Não editar linha por linha; aplicar alterações em bloco único/consolidado.
-Manter o SDD atualizado com as correções realizadas.
+Ajuste a implementação atual conforme este pedido: <DESCREVER_PEDIDO>.
+Antes de alterar, identifique comportamento existente, arquivos afetados, componentes, estados, rotas, validações, assets e interações que devem ser preservados.
+Não remova nem simplifique funcionalidades sem autorização explícita.
+Faça mudanças incrementais, valide regressões, execute QA visual quando houver UI e atualize o SDD com decisões e impactos.
 ```
 
-### Preparar handoff para desenvolvimento
+## Critérios de aceite
 
-```text
-Analise este arquivo ou seção do Figma com MCP: <URL>.
-Gere um checklist de handoff para desenvolvimento contendo: telas, componentes, estados ausentes, tokens, assets, fluxos, regras de comportamento, linguagem/stack a confirmar, estrutura de pastas sugerida e dúvidas pendentes.
-Organize o resultado de forma objetiva para validação com UX, PO e desenvolvimento.
-Não altere código.
-```
+A skill foi seguida corretamente quando:
 
-## Critérios de aceite da skill
-
-A skill foi usada corretamente quando:
-
-- O agente não implementa baseado apenas em imagem ou screenshot.
-- O escopo do Figma é específico e rastreável por URL.
-- A linguagem, framework ou stack foi confirmada antes da geração ou alteração de código.
-- A estrutura atual do repositório foi analisada antes da criação de arquivos.
-- Arquivos soltos na raiz foram evitados, salvo solicitação explícita para protótipo simples.
-- A implementação foi organizada em páginas, componentes, estilos, assets, serviços e utilitários quando aplicável.
-- Componentes existentes são priorizados.
-- Tokens e variáveis são respeitados.
-- Lacunas do design são sinalizadas antes de virar código.
-- Assets são baixados apenas quando realmente necessários.
-- Fundos, containers, cards, sombras, bordas e formas simples são reproduzidos em código quando possível.
-- Assets não utilizados são removidos apenas quando não há referência no projeto.
-- Assets utilizados são renomeados com nomes semânticos e referências atualizadas.
-- O SDD é atualizado.
-- Alterações são aplicadas de forma consolidada.
-- O resultado final é comparado com o Figma.
-- Logos e marcas foram preservados como assets, preferencialmente SVG.
-- O agente não converteu logos institucionais em texto HTML/CSS.
-- Botões, textos, ícones, cores e espaçamentos não foram alterados por interpretação própria.
-- Divergências em relação ao Figma foram tratadas como ajustes de fidelidade, não como redesign.
-- Screenshots não foram apenas gerados; foram analisados visualmente.
-- Não existem imagens, cards, textos, botões ou seções sobrepostos indevidamente.
-- Problemas de z-index, position absolute, overflow e responsividade foram verificados.
-- Erros visuais evidentes foram tratados como bloqueantes antes da conclusão.
-- Todas as logos da página foram identificadas, não apenas a do header.
-- Logos presentes no footer, sidebar, cards ou outras seções foram preservadas como assets/componentes visuais.
-- Nenhuma logo institucional foi recriada como texto HTML/CSS sem autorização explícita.
-- O mesmo asset de logo foi reutilizado quando a mesma marca apareceu em mais de uma seção.
-- A revisão final confirmou explicitamente header, footer e demais áreas com presença de marca.
-- Componentes interativos foram identificados antes da implementação.
+- O escopo do Figma foi específico e rastreável.
+- A stack foi confirmada ou já estava claramente definida.
+- A estrutura do repositório foi analisada antes de criar ou mover arquivos.
+- Arquivos soltos na raiz foram evitados, salvo protótipo simples solicitado.
+- A implementação ficou organizada em páginas, componentes, estilos, assets, serviços e utilitários quando aplicável.
+- Funcionalidades existentes foram preservadas.
+- Nenhuma rota, componente, estado, validação, asset ou interação foi removida sem autorização explícita.
+- Componentes interativos foram identificados e tiveram comportamento definido ou confirmado.
 - Carrosséis, sliders e galerias não foram tratados como blocos estáticos.
-- O comportamento do carrossel foi definido ou confirmado antes de codificar.
-- Itens do carrossel não ficaram sobrepostos, duplicados ou empilhados incorretamente.
-- O carrossel possui comportamento adequado para desktop e mobile.
-- O SDD registra o funcionamento do carrossel, incluindo navegação, responsividade e estados.
+- A fidelidade visual ao Figma foi priorizada sem inventar redesign.
+- Logos e marcas da página inteira foram preservados como assets/componente visual.
+- Nenhuma logo institucional foi recriada como texto HTML/CSS.
+- Assets foram baixados apenas quando necessários.
+- Fundos, containers, cards, botões, inputs, sombras, bordas e seções inteiras não foram exportados como imagem quando reproduzíveis em código.
+- Assets ficaram separados em `assets/svg/` e `assets/img/`.
+- Não restaram assets soltos diretamente em `assets/`.
+- Assets usados foram renomeados em kebab-case e referências foram atualizadas.
+- Apenas assets claramente não utilizados foram excluídos.
+- QA visual real foi executado e analisado.
+- Não há sobreposição indevida, texto cortado, elemento oculto, overflow, z-index incorreto ou erro visual evidente.
+- Validações técnicas disponíveis foram executadas ou a impossibilidade foi reportada.
+- SDD, README ou documentação aplicável foi atualizada.
+- Divergências, limitações e suposições foram registradas.
 
 ## Sinais de alerta
 
-Interrompa ou sinalize risco quando encontrar:
+Interrompa, sinalize risco ou peça confirmação quando encontrar:
 
-- Linguagem, framework ou stack não informada pelo usuário.
-- Criação de `index.html`, `style.css`, `script.js` ou arquivos equivalentes diretamente na raiz sem solicitação explícita.
-- Implementação concentrada em um único arquivo quando há potencial de crescimento.
-- Estrutura paralela criada sem respeitar a arquitetura existente.
-- Frame sem nome claro.
-- Layout baseado em grupos soltos sem auto layout.
-- Vários componentes visualmente iguais, mas não componentizados.
-- Estados de erro, loading ou vazio ausentes.
-- Ausência de regras de responsividade.
-- Cores e fontes fora dos tokens do projeto.
-- Assets não exportáveis.
-- Fundos, cards ou seções inteiras sendo exportados como imagem sem necessidade.
+- Stack não informada.
+- Link Figma genérico ou escopo amplo demais.
+- Frame com grupos soltos, nomes genéricos, sem tokens, sem estados ou sem responsividade clara.
+- Pedido que pode remover ou simplificar funcionalidade existente.
+- Necessidade de apagar rotas, componentes, estados, validações, assets ou interações.
+- Criação de `index.html`, `style.css`, `script.js` ou equivalentes soltos na raiz sem protótipo simples solicitado.
+- Implementação concentrada em arquivo único apesar de potencial de crescimento.
+- Layout sendo alterado por preferência própria.
+- Textos, botões, cores, ícones, espaçamentos ou hierarquia visual divergindo do Figma sem autorização.
+- Logo institucional implementada como texto ou fonte aproximada.
+- Logo do footer, sidebar, card ou outra seção ignorada.
 - Assets com uso incerto marcados para exclusão.
-- Renomeação de assets sem atualização das referências.
-- Figma divergente da arquitetura real do produto.
-- Solicitação para copiar visualmente sem respeitar componentes existentes.
-- O agente afirma que revisou a tela apenas porque gerou screenshots.
-- Há imagens, textos, cards ou botões ocupando o mesmo espaço visual.
-- Existem elementos com `position: absolute` ou `z-index` sem validação visual.
-- O screenshot mostra erro evidente, mas o agente conclui a tarefa como finalizada.
-- O agente revisou apenas a logo do header e ignorou marcas no footer ou em outras seções.
-- Uma logo institucional foi implementada como texto digitado.
-- A mesma logo foi baixada várias vezes com nomes diferentes.
-- A logo do footer ficou visualmente diferente da logo do Figma.
-- O agente assumiu que uma marca “parecida com texto” poderia ser implementada como texto comum.
-- SVGs e imagens rasterizadas foram salvos na mesma pasta.
-- Assets foram mantidos soltos diretamente em `assets/`.
-- Imports não foram atualizados após mover arquivos entre `img/` e `svg/`.
-- Múltiplas imagens ou cards em sequência foram implementados como elementos estáticos sem validação.
-- Cards de um possível carrossel ficaram empilhados, sobrepostos ou fora do container.
-- O agente ignorou setas, dots, overflow horizontal ou cards parcialmente visíveis no Figma.
-- O comportamento do carrossel não foi documentado no SDD.
-- O agente implementou autoplay, loop ou biblioteca externa sem confirmação.
+- SVGs e imagens raster misturados na mesma pasta.
+- Assets soltos diretamente em `assets/`.
+- Imports não atualizados após mover ou renomear assets.
+- Seções inteiras, cards, sombras, botões ou fundos simples exportados como imagem sem necessidade.
+- Carrossel, slider ou galeria implementado como bloco estático.
+- Setas, dots, cards parcialmente visíveis ou overflow horizontal ignorados.
+- Autoplay, loop ou biblioteca externa adicionados sem confirmação ou padrão do projeto.
+- Elementos com `position: absolute`, `z-index` ou `overflow` sem QA visual.
+- Screenshot gerado, mas não analisado.
+- Imagens, cards, textos ou botões ocupando o mesmo espaço indevidamente.
+- Texto cortado, elemento oculto, botão desalinhado ou container com tamanho incorreto.
+- Build, lint, teste ou validação aplicável não executado sem justificativa.
+- SDD ou documentação aplicável desatualizada após mudança técnica.
 
 ## Resultado esperado
 
-Ao final de uma tarefa usando esta skill, o agente deve entregar:
+Ao final de uma tarefa usando esta skill, entregar de forma objetiva:
 
-- Implementação aderente ao Figma e ao projeto.
-- Confirmação da linguagem, framework ou stack utilizada.
-- Estrutura de pastas utilizada ou proposta.
-- Lista objetiva de arquivos criados.
-- Lista objetiva de arquivos alterados.
-- Lista de assets baixados, quando houver, com justificativa.
-- Lista de assets excluídos, quando houver.
-- Lista de assets renomeados, quando houver.
-- Referências atualizadas no código e na documentação.
-- Decisões técnicas registradas.
-- Divergências ou suposições documentadas.
-- SDD atualizado.
-- Orientação clara para validação funcional e visual.
+- stack utilizada ou confirmada;
+- escopo Figma analisado;
+- estrutura de pastas usada ou alterada;
+- arquivos criados, alterados e removidos;
+- funcionalidades preservadas e riscos de regressão verificados;
+- componentes interativos identificados e comportamento definido;
+- inventário de logos/marcas relevantes;
+- assets baixados, movidos, renomeados, preservados ou excluídos;
+- confirmação de separação `assets/svg/` e `assets/img/` quando houver assets;
+- validação visual realizada, screenshots analisados e problemas encontrados;
+- validações técnicas executadas;
+- divergências, limitações e suposições documentadas;
+- SDD, README ou documentação aplicável atualizada;
+- pendências ou próximos passos, se existirem.

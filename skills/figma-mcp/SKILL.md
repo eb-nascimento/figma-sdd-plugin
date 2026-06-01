@@ -39,7 +39,6 @@ Antes de implementar qualquer tela, confirme:
 - O repositório possui padrões de componentes, rotas, estilos, tokens e estrutura de pastas.
 - O SDD ou documentação técnica do projeto está disponível ou deve ser atualizado durante a tarefa.
 
-
 ## Regra obrigatória — validação visual real, não apenas screenshot
 
 Após implementar ou revisar uma tela, o agente não deve apenas gerar screenshots. Ele deve analisar os screenshots e o DOM/renderização para identificar problemas visuais objetivos.
@@ -67,6 +66,69 @@ Se o agente gerar screenshots, ele deve revisar visualmente cada tela e declarar
 
 Não considerar a validação concluída apenas porque a página carregou ou porque o screenshot foi gerado.
 
+## Regra obrigatória — identificação de componentes interativos
+
+Ao analisar um frame do Figma, o agente deve identificar elementos que representam componentes interativos, mesmo quando o comportamento não estiver totalmente explícito no design.
+
+O agente deve verificar especialmente:
+
+- carrosséis;
+- sliders;
+- abas;
+- accordions;
+- menus dropdown;
+- modais;
+- cards clicáveis;
+- paginações;
+- galerias de imagens;
+- steps/etapas;
+- formulários com múltiplas telas;
+- banners rotativos.
+
+O agente não deve transformar componentes interativos em blocos estáticos sem validar o comportamento esperado.
+
+Quando identificar um possível carrossel, slider ou galeria, o agente deve confirmar ou inferir com cautela:
+
+- quais itens fazem parte do carrossel;
+- se os itens aparecem um por vez ou em grupo;
+- se há navegação por setas;
+- se há indicadores/pontos de paginação;
+- se há autoplay;
+- se há loop infinito;
+- se há swipe em dispositivos móveis;
+- se há comportamento responsivo;
+- se há acessibilidade por teclado;
+- se o carrossel deve ser implementado com componente próprio, biblioteca ou código nativo.
+
+Se o comportamento não estiver claro no Figma, o agente deve perguntar antes de implementar.
+
+## Regra obrigatória — carrosséis, sliders e galerias
+
+Quando o Figma apresentar múltiplos cards, imagens, banners ou depoimentos organizados em sequência horizontal, o agente deve avaliar se isso representa um carrossel, slider ou galeria navegável.
+
+O agente não deve empilhar todos os itens verticalmente nem sobrepor imagens caso o layout indique navegação horizontal.
+
+Antes de implementar um carrossel, o agente deve mapear:
+
+- lista de itens/slides;
+- conteúdo de cada slide;
+- imagem, título, texto e botão de cada item;
+- largura dos cards;
+- espaçamento entre itens;
+- quantidade de itens visíveis por breakpoint;
+- controles de navegação;
+- indicadores;
+- comportamento mobile;
+- comportamento de acessibilidade.
+
+Se houver setas, dots, overflow horizontal, cards parcialmente visíveis ou múltiplos frames representando estados diferentes, tratar como forte indício de carrossel.
+
+Se o Figma não definir o comportamento, perguntar ao usuário:
+
+"Esse bloco deve funcionar como carrossel/slider? Se sim, deve ter setas, dots, autoplay, swipe no mobile ou apenas rolagem horizontal?"
+
+A implementação deve preservar o comportamento esperado e não apenas a aparência estática.
+
 ## Regra obrigatória — detecção de sobreposição de elementos
 
 Durante a revisão visual, o agente deve verificar se há elementos ocupando o mesmo espaço de forma indevida.
@@ -91,7 +153,6 @@ Quando houver três ou mais imagens, ícones ou elementos visuais próximos, o a
 Se houver dúvida, tratar como possível erro visual e reportar antes de finalizar.
 
 Sobreposição só deve ser aceita quando estiver claramente prevista no Figma, como em avatares agrupados, badges, overlays, sombras, fundos decorativos ou composições visuais intencionais.
-
 
 ## Regra obrigatória — confirmação da linguagem/stack
 
@@ -710,6 +771,31 @@ Não editar linha por linha; aplicar alterações em bloco único/consolidado.
 Manter o SDD atualizado com as correções realizadas.
 ```
 
+### Identificar e implementar carrossel corretamente
+
+```text
+Use o Figma MCP para analisar este frame: <URL_DO_FRAME>.
+
+Antes de implementar, identifique se há carrosséis, sliders, galerias, abas ou outros componentes interativos.
+
+Para cada possível carrossel, informe:
+1. Quais elementos fazem parte do carrossel.
+2. Quantos itens existem.
+3. Quantos itens devem aparecer por vez.
+4. Se há setas, dots, autoplay, loop ou swipe mobile.
+5. Como deve funcionar no desktop e no mobile.
+6. Se o comportamento está explícito no Figma ou precisa de confirmação.
+
+Não implemente o carrossel como imagens soltas, elementos sobrepostos ou blocos estáticos.
+
+Se o comportamento não estiver claro, pergunte antes de codificar.
+
+Após confirmar, implemente respeitando a stack definida, a estrutura do projeto, os componentes existentes e a fidelidade visual do Figma.
+
+Não editar linha por linha; aplicar alterações em bloco único/consolidado.
+Atualize o SDD com o comportamento do carrossel.
+```
+
 ### Organizar estrutura antes de implementar
 
 ```text
@@ -991,6 +1077,12 @@ A skill foi usada corretamente quando:
 - Nenhuma logo institucional foi recriada como texto HTML/CSS sem autorização explícita.
 - O mesmo asset de logo foi reutilizado quando a mesma marca apareceu em mais de uma seção.
 - A revisão final confirmou explicitamente header, footer e demais áreas com presença de marca.
+- Componentes interativos foram identificados antes da implementação.
+- Carrosséis, sliders e galerias não foram tratados como blocos estáticos.
+- O comportamento do carrossel foi definido ou confirmado antes de codificar.
+- Itens do carrossel não ficaram sobrepostos, duplicados ou empilhados incorretamente.
+- O carrossel possui comportamento adequado para desktop e mobile.
+- O SDD registra o funcionamento do carrossel, incluindo navegação, responsividade e estados.
 
 ## Sinais de alerta
 
@@ -1024,6 +1116,11 @@ Interrompa ou sinalize risco quando encontrar:
 - SVGs e imagens rasterizadas foram salvos na mesma pasta.
 - Assets foram mantidos soltos diretamente em `assets/`.
 - Imports não foram atualizados após mover arquivos entre `img/` e `svg/`.
+- Múltiplas imagens ou cards em sequência foram implementados como elementos estáticos sem validação.
+- Cards de um possível carrossel ficaram empilhados, sobrepostos ou fora do container.
+- O agente ignorou setas, dots, overflow horizontal ou cards parcialmente visíveis no Figma.
+- O comportamento do carrossel não foi documentado no SDD.
+- O agente implementou autoplay, loop ou biblioteca externa sem confirmação.
 
 ## Resultado esperado
 
